@@ -209,3 +209,6 @@ __marimo__/
 # Data folder - ignore all contents but keep the folder structure
 data/*
 !data/.gitkeep
+# pixi environments
+.pixi/*
+!.pixi/config.toml
