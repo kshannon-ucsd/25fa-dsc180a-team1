@@ -162,7 +162,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.25.0-py311h5bb9006_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-h6491c7d_2.conda
-      - pypi: /Users/guoxuanxu/Documents/local_repo/25fa-dsc180a-team1
+      - pypi: ./
 packages:
 - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.11.0-pyhcf101f3_0.conda
   sha256: 7378b5b9d81662d73a906fabfc2fb81daddffe8dc0680ed9cda7a9562af894b0
@@ -1241,7 +1241,7 @@ packages:
   - pkg:pypi/matplotlib-inline?source=hash-mapping
   size: 14467
   timestamp: 1733417051523
-- pypi: /Users/guoxuanxu/Documents/local_repo/25fa-dsc180a-team1
+- pypi: ./
   name: mimiciii-db
   version: 0.1.0
   sha256: 00b70487201565967804676265ff7b93554b6a2039ee2b3d8aebfa2ead1a603e
