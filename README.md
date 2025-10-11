@@ -1,5 +1,5 @@
 # 25fa-dsc180a-team1
-Paper reproduction team 1
+paper reproduction team 1
 
 ## Getting Started (with Pixi)
 
@@ -108,16 +108,9 @@ pixi reinstall --locked    # CI / clean rebuild from lockfile
 
 ```
 25fa-dsc180a-team1/
-├── src/
-│   └── mimiciii_db/
-│       ├── __init__.py
-│       ├── db.py
-│       ├── config.py
-│       └── queries/
-├── notebooks/
-│   └── jason_test.ipynb
 ├── assets/
 ├── data/
+│   └── .gitkeep
 ├── dev_container/
 ├── logs/
 ├── pyproject.toml             # build config (Setuptools)
