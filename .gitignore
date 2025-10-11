@@ -210,6 +210,10 @@ __marimo__/
 data/*
 !data/.gitkeep
 
+# Logs folder - ignore all contents but keep the folder structure
+logs/*
+!logs/.gitkeep
+
 # macOS
 .DS_Store
 .DS_Store?
