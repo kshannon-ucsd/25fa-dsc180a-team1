@@ -7,15 +7,24 @@ Paper reproduction team 1
 - Git
 - Pixi (one-time installation)
 
+#### Installing Pixi
+
 **macOS/Linux:**
 ```bash
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell - Run as Administrator):**
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm -useb https://pixi.sh/install.ps1 | iex"
+iwr -useb https://pixi.sh/install.ps1 | iex
 ```
+
+**After installation:**
+- Close and reopen your terminal/PowerShell
+- Verify installation: `pixi --version`
+- On Windows, you may need to restart your computer for PATH changes to take effect
+
+**Note:** Linux and Windows setup instructions have not been extensively tested. If you encounter issues during setup, please raise a PR or open an issue to help improve the documentation.
 
 ### Setup Instructions
 
@@ -33,11 +42,34 @@ pixi install
 - Installs the local package `mimiciii-db` in editable mode
 
 3) **Set up database connection**
+
+**macOS/Linux (bash/zsh):**
 ```bash
 export DATABASE_URL="postgresql://user:password@host:port/database"
 ```
+
+**Windows (PowerShell):**
+```powershell
+$env:DATABASE_URL="postgresql://user:password@host:port/database"
+```
+
+**Windows (Command Prompt):**
+```cmd
+set DATABASE_URL=postgresql://user:password@host:port/database
+```
+
 - Replace with your actual database connection string
 - This environment variable is required for the `mimiciii_db` package to work
+- For persistent configuration, consider using a `.env` file (already supported via `python-dotenv`)
+
+**Alternative: Use .env file (recommended for all platforms)**
+
+Create a `.env` file in the project root:
+```bash
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+This works across all platforms and persists between sessions.
 
 4) **Sanity check**
 ```bash
@@ -103,3 +135,5 @@ See the [mimiciii_db package documentation](src/mimiciii_db/README.md) for detai
 - **ImportError: mimiciii_db**: Make sure the folder is `src/mimiciii_db/` (three i's) and `pixi install` succeeded.
 - **Version conflict (Python 3.10 vs 3.11)**: Align `requires-python` in `pyproject.toml` with the Python version pinned in `pixi.toml`, then `pixi install`.
 - **Build error when adding editable**: Ensure `pyproject.toml` is present and uses Setuptools with `package-dir` + `packages.find` shown above; remove any stale `*.egg-info`, then `pixi install`.
+- **ModuleNotFoundError: psycopg2**: Make sure both `psycopg` and `psycopg2-binary` are installed. Run `pixi install` to ensure all dependencies are present.
+- **RuntimeError: DATABASE_URL not set**: Set the `DATABASE_URL` environment variable (see step 3) or create a `.env` file in the project root.
