@@ -55,8 +55,16 @@ mimiciii-db = { path = ".", editable = true }
 pytest = "*"
 ruff = "*"
 black = { extras = ["jupyter"] }
+pytest-cov = "*"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
 
 [tool.pixi.tasks]
-test = "pytest -q"
+test = "pytest -v"
+test-cov = "pytest --cov=mimiciii_db --cov-report=term-missing"
 lint = "ruff check ."
 fmt = "black ."

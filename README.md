@@ -95,6 +95,27 @@ pixi run lint      # ruff check .
 pixi run fmt       # black .
 ```
 
+## Testing
+
+This project includes basic functional tests for the database connection and core functionality. We currently have a few simple tests to verify:
+
+- Database connection works correctly
+- Core tables (patients, admissions) are accessible and have expected structure
+- Basic data retrieval functions properly
+
+**Running tests:**
+```bash
+pixi run test      # Run all tests
+pixi run test-cov  # Run tests with coverage
+```
+
+**Prerequisites:**
+Make sure you have set up your `DATABASE_URL` environment variable (see step 3 above) or created a `.env` file.
+
+**Note:** These are initial tests to verify basic functionality. We will continue to expand the test suite as the project develops.
+
+For detailed testing information, see [tests/README.md](tests/README.md).
+
 7) **Day-to-day usage**
 ```bash
 pixi shell                 # open a shell in the environment
