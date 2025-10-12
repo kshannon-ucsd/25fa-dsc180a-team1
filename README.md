@@ -135,6 +135,10 @@ pixi reinstall --locked    # CI / clean rebuild from lockfile
 │       ├── db.py
 │       ├── config.py
 │       └── queries/
+├── tests/
+│   ├── __init__.py
+│   ├── test_db_functional.py
+│   └── README.md
 ├── notebooks/
 │   └── jason_test.ipynb
 ├── assets/
