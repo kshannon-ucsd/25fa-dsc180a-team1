@@ -1,164 +1,132 @@
-# 25fa-dsc180a-team1
-Paper reproduction team 1
+# MIMIC-III EDA Analysis Wiki
 
-## Getting Started (with Pixi)
+## Branch: `analysis/gloria_eda`
 
-### Prerequisites
-- Git
-- Pixi (one-time installation)
-
-#### Installing Pixi
-
-**macOS/Linux:**
-```bash
-curl -fsSL https://pixi.sh/install.sh | sh
-```
-
-**Windows (PowerShell - Run as Administrator):**
-```powershell
-iwr -useb https://pixi.sh/install.ps1 | iex
-```
-
-**After installation:**
-- Close and reopen your terminal/PowerShell
-- Verify installation: `pixi --version`
-- On Windows, you may need to restart your computer for PATH changes to take effect
-
-**Note:** Linux and Windows setup instructions have not been extensively tested. If you encounter issues during setup, please raise a PR or open an issue to help improve the documentation.
-
-### Setup Instructions
-
-1) **Clone the repository**
-```bash
-git clone <REPO_URL>
-cd 25fa-dsc180a-team1
-```
-
-2) **Create the environment**
-```bash
-pixi install
-```
-- Pixi reads `pixi.toml` + `pixi.lock`, installs Python 3.11 and all dependencies
-- Installs the local package `mimiciii-db` in editable mode
-
-3) **Set up database connection**
-
-**macOS/Linux (bash/zsh):**
-```bash
-export DATABASE_URL="postgresql://user:password@host:port/database"
-```
-
-**Windows (PowerShell):**
-```powershell
-$env:DATABASE_URL="postgresql://user:password@host:port/database"
-```
-
-**Windows (Command Prompt):**
-```cmd
-set DATABASE_URL=postgresql://user:password@host:port/database
-```
-
-- Replace with your actual database connection string
-- This environment variable is required for the `mimiciii_db` package to work
-- For persistent configuration, consider using a `.env` file (already supported via `python-dotenv`)
-
-**Alternative: Use .env file (recommended for all platforms)**
-
-Create a `.env` file in the project root:
-```bash
-DATABASE_URL=postgresql://user:password@host:port/database
-```
-
-This works across all platforms and persists between sessions.
-
-4) **Sanity check**
-```bash
-pixi run python -V
-pixi run python -c "import mimiciii_db, sys; print('ok from', mimiciii_db.__file__); print(sys.executable)"
-```
-
-5) **Notebooks (optional)**
-```bash
-pixi run jupyter lab
-```
-
-Or create a named kernel:
-```bash
-pixi run python -m ipykernel install --user --name mimiciii-db
-```
-Then select `mimiciii-db` in VS Code/Jupyter.
-
-6) **Common tasks**
-```bash
-pixi run test      # pytest -q
-pixi run lint      # ruff check .
-pixi run fmt       # black .
-```
-
-## Testing
-
-This project includes basic functional tests for the database connection and core functionality. We currently have a few simple tests to verify:
-
-- Database connection works correctly
-- Core tables (patients, admissions) are accessible and have expected structure
-- Basic data retrieval functions properly
-
-**Running tests:**
-```bash
-pixi run test      # Run all tests
-pixi run test-cov  # Run tests with coverage
-```
-
-**Prerequisites:**
-Make sure you have set up your `DATABASE_URL` environment variable (see step 3 above) or created a `.env` file.
-
-**Note:** These are initial tests to verify basic functionality. We will continue to expand the test suite as the project develops.
-
-For detailed testing information, see [tests/README.md](tests/README.md).
-
-7) **Day-to-day usage**
-```bash
-pixi shell                 # open a shell in the environment
-pixi add <pkg>             # add a conda-forge dependency
-pixi add --pypi <pkg>      # add a PyPI dependency
-pixi install               # re-solve after changes
-pixi reinstall --locked    # CI / clean rebuild from lockfile
-```
+This wiki documents the exploratory data analysis (EDA) work conducted on the MIMIC-III database for DSC 180A Team 1's paper reproduction project.
 
 ## Project Structure
 
 ```
 25fa-dsc180a-team1/
-├── src/
-│   └── mimiciii_db/
-│       ├── __init__.py
-│       ├── db.py
-│       ├── config.py
-│       └── queries/
-├── tests/
-│   ├── __init__.py
-│   ├── test_db_functional.py
-│   └── README.md
-├── notebooks/
-│   └── jason_test.ipynb
-├── assets/
-├── data/
-├── dev_container/
-├── logs/
-├── pyproject.toml             # build config (Setuptools)
-├── pixi.toml                  # project env/tasks config
-├── pixi.lock                  # lockfile for reproducibility
-└── README.md
+├── notebooks/01_eda/                    # EDA notebooks
+│   ├── gloria_eda.ipynb             # Main EDA analysis
+│   └── illness_score.ipynb          # SOFA score analysis
+├── assets/                          # Generated visualizations
+│   ├── age_by_admission_type.png
+│   ├── age_by_ethnicity.png
+│   ├── age_by_gender.png
+│   ├── admission_type_counts.png
+│   ├── gender_distribution.png
+│   ├── los_by_icu_careunit.png
+│   ├── note_length_distribution.png
+│   ├── top_icd9_diagnoses.png
+│   ├── top_lab_tests.png
+│   └── top_note_categories.png
+└── src/mimiciii_db/                 # Database connection package
 ```
 
-## Usage
+## Analyses
 
-See the [mimiciii_db package documentation](src/mimiciii_db/README.md) for detailed usage examples and API reference.
+### 1. Patient Demographics Analysis (`gloria_eda.ipynb`)
 
-## Troubleshooting
+#### Gender Distribution
+- **Visualization**: `assets/gender_distribution.png`
+- **Findings**: 
+  - Male patients: 26,121 (56.1%)
+  - Female patients: 20,399 (43.9%)
+- **Analysis**: Bar chart with percentage annotations
 
-- **ImportError: mimiciii_db**: Make sure the folder is `src/mimiciii_db/` (three i's) and `pixi install` succeeded.
-- **Version conflict (Python 3.10 vs 3.11)**: Align `requires-python` in `pyproject.toml` with the Python version pinned in `pixi.toml`, then `pixi install`.
-- **Build error when adding editable**: Ensure `pyproject.toml` is present and uses Setuptools with `package-dir` + `packages.find` shown above; remove any stale `*.egg-info`, then `pixi install`.
-- **ModuleNotFoundError: psycopg2**: Make sure both `psycopg` and `psycopg2-binary` are installed. Run `pixi install` to ensure all dependencies are present.
-- **RuntimeError: DATABASE_URL not set**: Set the `DATABASE_URL` environment variable (see step 3) or create a `.env` file in the project root.
+#### Age Analysis by Gender
+- **Visualization**: `assets/age_by_gender.png`
+- **Methodology**: 
+  - Focus on adults (18-89 years old)
+  - Stacked histogram by gender
+  - Mean age annotations
+- **Findings**:
+  - Female mean age: 63.10 years
+  - Male mean age: 61.27 years
+
+#### Age Analysis by Admission Type
+- **Visualization**: `assets/age_by_admission_type.png`
+- **Methodology**:
+  - Normalized admission types (e.g., "EW EMER." → "EMERGENCY")
+  - Excluded NEWBORN admissions
+  - Color-coded by admission frequency
+- **Key Admission Types**:
+  - Emergency admissions
+  - Elective admissions
+  - Urgent admissions
+
+#### Ethnicity Analysis
+- **Visualization**: `assets/age_by_ethnicity.png`
+- **Methodology**:
+  - Ethnicity normalization into broad categories
+  - Categories: WHITE, BLACK, HISPANIC/LATINO, ASIAN, OTHER, etc.
+  - Mean age annotations for each group
+
+### 2. Clinical Data Analysis
+
+#### Admission Type Distribution
+- **Visualization**: `assets/admission_type_counts.png`
+- **Analysis**: Horizontal bar chart showing frequency of different admission types
+
+#### Length of Stay by ICU Care Unit
+- **Visualization**: `assets/los_by_icu_careunit.png`
+- **Methodology**:
+  - Focus on stays 0-60 days
+  - Stacked histogram by ICU care unit
+  - Shows distribution of length of stay across different ICU types
+
+#### Top ICD-9 Diagnoses
+- **Visualization**: `assets/top_icd9_diagnoses.png`
+- **Analysis**: Top 15 most common diagnoses in the database
+- **Data Source**: `diagnoses_icd` and `d_icd_diagnoses` tables
+
+#### Laboratory Tests Analysis
+- **Visualization**: `assets/top_lab_tests.png`
+- **Methodology**:
+  - Top 20 most frequently ordered lab tests
+  - Data from `labevents` and `d_labitems` tables
+  - Excludes NULL values
+
+### 3. Clinical Notes Analysis
+
+#### Note Categories
+- **Visualization**: `assets/top_note_categories.png`
+- **Analysis**: Top 10 most common note categories
+- **Data Source**: `noteevents` table
+
+#### Note Length Distribution
+- **Visualization**: `assets/note_length_distribution.png`
+- **Analysis**: Histogram of note character lengths
+- **Insights**: Understanding of clinical note complexity
+
+### 4. SOFA Score Analysis (`illness_score.ipynb`)
+
+This notebook focuses on Sequential Organ Failure Assessment (SOFA) score analysis:
+
+#### SOFA Components
+- **Respiratory System**: PaO2/FiO2 ratio
+- **Coagulation**: Platelet count
+- **Liver**: Bilirubin level
+- **Cardiovascular**: Blood pressure
+- **Central Nervous System**: Glasgow Coma Scale
+- **Renal**: Creatinine/urine output
+
+#### Analysis Criteria
+- ICU stays ≥ 24 hours
+- Age ≥ 16 years
+- Elective vs non-elective admissions
+- Focus on patients, admissions, and icustays tables
+
+## File Organization
+
+### Notebooks
+- `gloria_eda.ipynb`: Comprehensive EDA covering demographics, admissions, clinical data
+- `illness_score.ipynb`: SOFA score analysis and illness severity metrics
+
+### Generated Assets
+All plots are automatically saved to the `assets/` folder with descriptive filenames:
+- Demographics plots: `gender_distribution.png`, `age_by_*.png`
+- Clinical analysis: `admission_type_counts.png`, `los_by_icu_careunit.png`
+- Data exploration: `top_*.png`, `note_length_distribution.png`
