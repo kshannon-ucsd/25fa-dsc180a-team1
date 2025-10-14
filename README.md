@@ -3,15 +3,26 @@ MIMIC-III EDA Summary
 Branch: analysis/gloria_eda
 This page summarizes exploratory data analysis (EDA) for DSC 180A Team 1’s MIMIC-III paper reproduction project.
 
-Project Overview
+```
 25fa-dsc180a-team1/
-├── notebooks/01_eda/
-│   ├── gloria_eda.ipynb         # Demographics, admissions, clinical data
-│   └── illness_score.ipynb      # SOFA score analysis
-├── assets/                      # Saved visualizations
-└── src/mimiciii_db/             # Database package
+├── notebooks/01_eda/                    # EDA notebooks
+│   ├── gloria_eda.ipynb             # Main EDA analysis
+│   └── illness_score.ipynb          # SOFA score analysis
+├── assets/                          # Generated visualizations
+│   ├── age_by_admission_type.png
+│   ├── age_by_ethnicity.png
+│   ├── age_by_gender.png
+│   ├── admission_type_counts.png
+│   ├── gender_distribution.png
+│   ├── los_by_icu_careunit.png
+│   ├── note_length_distribution.png
+│   ├── top_icd9_diagnoses.png
+│   ├── top_lab_tests.png
+│   └── top_note_categories.png
+└── src/mimiciii_db/                 # Database connection package
+```
 
-Key Analyses
+Key Analyses for week 2
 1. Patient Demographics (gloria_eda.ipynb)
 
 Gender: 56.1% male, 43.9% female (gender_distribution.png)
