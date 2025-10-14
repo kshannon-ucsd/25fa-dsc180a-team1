@@ -16,23 +16,40 @@ style: |
 
 Utkarsh, Varun, Gloria, Jason
 
+---
+<!-- _class: lead -->
 
+# Basic EDA
+
+- Preliminary results from the paper that we were able to reproduce (almost exactly, with all values lying between the 95% CI):
+    - Sample Set (36,607 vs. 36,390)
+    - M:F ratio (57.8:42.2 - **EXACTLY RIGHT**)
+    - Multimorbidity Percentage (76.8% vs. 77.3%)
+    - Overall Mortality Rate (10.82% vs. 10.9%)
+---
+
+<!-- _class: lead -->
+
+Utkarsh EDA Plots
 
 ---
-# EDA - I
+<!-- _class: lead -->
+# Visualizing Plots
 
-- Add code and basic eda done
-- talk about problems face/how we tackled them
+- Creating Materialized Views:
+    - varun_filtered_patients
+    - varun_morbidity_counts
+    - varun_filtered_patients_with_morbidity_counts
+    - varun_multimorbidity_by_age_bracket_1a
+
+- Using the final MV, and some code in python, we were able to recreate the visualization of Fig 1a:
 
 ---
-# EDA - II
+# Figure 1a
 
-- Add code and fig 1a replication
+<!-- _class: lead -->
 
----
-# K-Means - I
-
-This is the content of the second slide.
+![width:20cm height:12.5cm](./visualization_1a.png)
 
 ---
 # K-Means - II
