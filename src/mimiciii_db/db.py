@@ -65,11 +65,13 @@ class DB:
 
     # --- Convenience methods ---
     def table_df(
-        self, table: str, limit: Optional[int] = 100, schema: Optional[str] = None
+        self, table: str, limit: Optional[int] = None, schema: Optional[str] = None
     ) -> pd.DataFrame:
-        """Quickly preview a table."""
+        """Return the whole table unless a limit is explicitly provided."""
         ident = f'"{schema}".{table}' if schema else table
-        sql = f"SELECT * FROM {ident}" + (f" LIMIT {int(limit)}" if limit else "")
+        sql = f"SELECT * FROM {ident}"
+        if limit is not None:
+            sql += f" LIMIT {int(limit)}"
         return self.query_df(sql)
 
     # --- Named query registry ---
