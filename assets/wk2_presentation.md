@@ -30,7 +30,10 @@ Utkarsh, Varun, Gloria, Jason
 
 <!-- _class: lead -->
 
-Utkarsh EDA Plots
+<div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px;">
+  <img src="./age_distribution.png" width="400">
+  <img src="./gender_distribution.png" width="400">
+  <img src="./mortality_by_age_group.png" width="400">
 
 ---
 <!-- _class: lead -->
@@ -52,13 +55,27 @@ Utkarsh EDA Plots
 ![width:20cm height:12.5cm](./visualization_1a.png)
 
 ---
-# K-Means - II
+# K-Means
 
-This is the content of the second slide.
+- Goal: Replicated the paper’s k-means clustering step to uncover multimorbidity patterns across age brackets in MIMIC-III.
+
+- Method: SQL-based ICD-9 flag extraction → prevalence by age group → NumPy K-means (K=3) + PCA visualization.
+
+- Result: Clear separation of clusters — younger addiction-related vs. older cardiometabolic disease profiles.
+
+- Visualization: Heatmap of disease prevalence, PCA scatter, and cluster-center bar charts showing top varying features.
+
+---
+<!-- _class: lead -->
+
+<div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px;">
+  <img src="./Cluster_Vis.png" width="400">
+  <img src="./Prevalance_Heatmap.png" width="400">
+  <img src="./Top_Varying_Features.png" width="400">
 
 ---
 # Next Steps
 
-The following week we plan to ...
-
----
+In the following week we plan to:
+- Reproduce more plots from the paper.
+- Start conducting LCA and K-Means to reproduce the findings from the paper.
