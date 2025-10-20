@@ -22,4 +22,4 @@ pd.display(df)
 
 #this should be enough to create the elixhauser_quan comorbidity score
 #prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
-#so, in addition to the command above, I would recommend running the command "ALTER TABLE {old_name} RENAME TO {varun_old_name};"
+#so, in addition to the command above, I would recommend running the command "ALTER TABLE {old_name} RENAME TO {varun_old_name}"
