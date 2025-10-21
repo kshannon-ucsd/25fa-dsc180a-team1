@@ -12,11 +12,7 @@ db = DB.from_url(db_url())
 
 fp = "/Users/varunpabreja/Desktop/dsc180_capstone/mimic-code/mimic-iii/concepts_postgres/comorbidity/elixhauser_quan.sql"
 
-query = f"""
-\i {fp}
-"""
-
-db.run_sql_file(query)
+db.run_sql_file(fp)
 
 df = db.query_df("SELECT * FROM mimiciii.elixhauser_quan LIMIT 1;")
 

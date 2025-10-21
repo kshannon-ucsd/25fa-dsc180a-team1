@@ -103,12 +103,9 @@ class DB:
         """
         import re
         try:
-            with open(fp, "r", encoding="utf-8") as f:
+            with open(fp, "r") as f:
                 sql_text = f.read()
-
-            # Remove SQL comments (optional, just for safety)
-            sql_text = re.sub(r"--.*", "", sql_text)
-
+                
             with self.engine.begin() as conn:
                 # Execute entire SQL script in one go (Postgres supports multi-statements)
                 conn.exec_driver_sql(sql_text)
