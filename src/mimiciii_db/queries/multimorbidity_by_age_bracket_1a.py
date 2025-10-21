@@ -19,7 +19,7 @@ CREATE MATERIALIZED VIEW mimiciii.multimorbidity_by_age_bracket_1a AS
                     ELSE '≥85'::text
                 END AS age_bracket,
             ((v.morbidity_count >= 2))::integer AS is_multimorbid
-           FROM mimiciii.filtered_patients_with_morbidity_count v
+           FROM mimiciii.filtered_patients_with_morbidity_counts v
           WHERE (v.age IS NOT NULL)
         ), agg AS (
          SELECT base_table.age_bracket,
