@@ -102,7 +102,6 @@ class DB:
         Args:
             fp (str): Path to the SQL file.
         """
-        import re
         try:
             with open(fp, "r") as f:
                 sql_text = f.read()
@@ -117,3 +116,14 @@ class DB:
             raise RuntimeError(f"SQL file not found: {fp}")
         except Exception as e:
             raise RuntimeError(f"Error executing SQL file '{fp}': {e}")
+        
+    from sqlalchemy import text
+
+    def execute(self, sql: str, params: Optional[Mapping[str, Any]] = None) -> None:
+        """Execute a non-SELECT SQL statement (DDL/DML) and commit."""
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text(sql), params or {})
+        except (SQLAlchemyError, OperationalError) as e:
+            raise RuntimeError(f"Database execute failed: {e}")
+

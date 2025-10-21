@@ -35,14 +35,14 @@ CREATE MATERIALIZED VIEW mimiciii.filtered_patients AS
   WHERE ((round(((((fi.intime)::date - (pat.dob)::date))::numeric / 365.242), 2) >= (16)::numeric) AND (round(((((fi.intime)::date - (pat.dob)::date))::numeric / 365.242), 2) <= (89)::numeric))
 """
 
-db.query_df(query)
+db.execute(query)
 
 selection_query = f"""
 SELECT * from mimiciii.filtered_patients LIMIT 1;
 """
 df = db.query_df(selection_query)
 
-pd.display(df)
+print(df)
 
 #prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
 #so, in addition to the command above, I would recommend running the command "ALTER MATERIALIZED VIEW {old_mv} RENAME TO {varun_old_mv}"
