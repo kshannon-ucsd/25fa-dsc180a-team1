@@ -23,14 +23,14 @@ CREATE MATERIALIZED VIEW mimiciii.morbidity_counts AS
      JOIN mimiciii.elixhauser_quan e USING (hadm_id))
 """
 
-db.query_df(query)
+db.execute(query)
 
 selection_query = f"""
 SELECT * from mimiciii.morbidity_counts LIMIT 1;
 """
 df = db.query_df(selection_query)
 
-pd.display(df)
+print(df)
 
 #prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
 #so, in addition to the command above, I would recommend running the command "ALTER MATERIALIZED VIEW {old_mv} RENAME TO {varun_old_mv}"
