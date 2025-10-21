@@ -58,7 +58,7 @@ CREATE MATERIALIZED VIEW mimiciii.multimorbidity_by_age_bracket_1a AS
 db.query_df(query)
 
 selection_query = f"""
-SELECT * from multimorbidity_by_age_bracket_1a
+SELECT * from multimorbidity_by_age_bracket_1a LIMIT 1;
 """
 df = db.query_df(selection_query)
 

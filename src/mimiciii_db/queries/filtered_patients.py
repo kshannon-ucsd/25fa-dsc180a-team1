@@ -38,7 +38,7 @@ CREATE MATERIALIZED VIEW mimiciii.filtered_patients AS
 db.query_df(query)
 
 selection_query = f"""
-SELECT * from mimiciii.filtered_patients
+SELECT * from mimiciii.filtered_patients LIMIT 1;
 """
 df = db.query_df(selection_query)
 

@@ -8,15 +8,17 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 #find the filepath for the elixhauser_quan file
-#for me, it was here - /Users/varunpabreja/Desktop/dsc180_capstone/mimic-code/mimic-iii/concepts_postgres/comorbidity/elixhauser_score_quan.sql
+#for me, it was here - /Users/varunpabreja/Desktop/dsc180_capstone/mimic-code/mimic-iii/concepts_postgres/comorbidity/elixhauser_quan.sql
 
-fp = "/Users/varunpabreja/Desktop/dsc180_capstone/mimic-code/mimic-iii/concepts_postgres/comorbidity/elixhauser_score_quan.sql"
+fp = "/Users/varunpabreja/Desktop/dsc180_capstone/mimic-code/mimic-iii/concepts_postgres/comorbidity/elixhauser_quan.sql"
 
 query = f"""
 \i {fp}
 """
 
-df = db.query_df(query)
+db.run_sql_file(query)
+
+df = db.query_df("SELECT * FROM mimiciii.elixhauser_quan LIMIT 1;")
 
 pd.display(df)
 

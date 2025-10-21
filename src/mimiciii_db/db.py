@@ -93,3 +93,29 @@ class DB:
     def dispose(self) -> None:
         """Close all connection pools."""
         self.engine.dispose()
+
+    def run_sql_file(self, fp: str) -> None:
+        """
+        Execute a .sql file as if running '\i file.sql' in psql.
+
+        Args:
+            fp (str): Path to the SQL file.
+        """
+        import re
+        try:
+            with open(fp, "r", encoding="utf-8") as f:
+                sql_text = f.read()
+
+            # Remove SQL comments (optional, just for safety)
+            sql_text = re.sub(r"--.*", "", sql_text)
+
+            with self.engine.begin() as conn:
+                # Execute entire SQL script in one go (Postgres supports multi-statements)
+                conn.exec_driver_sql(sql_text)
+
+            print(f"Executed SQL file successfully: {fp}")
+
+        except FileNotFoundError:
+            raise RuntimeError(f"SQL file not found: {fp}")
+        except Exception as e:
+            raise RuntimeError(f"Error executing SQL file '{fp}': {e}")
