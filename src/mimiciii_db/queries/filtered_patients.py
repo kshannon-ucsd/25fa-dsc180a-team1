@@ -7,8 +7,6 @@ from mimiciii_db.config import db_url
 
 db = DB.from_url(db_url())
 
-#
-
 query = f"""
 CREATE MATERIALIZED VIEW mimiciii.filtered_patients AS
  WITH first_icu AS (
