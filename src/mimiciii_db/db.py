@@ -33,6 +33,7 @@ class DB:
             max_overflow=max_overflow,
             pool_pre_ping=pool_pre_ping,
             future=True,
+            connect_args={"options": "-csearch_path=mimiciii,public"},
             **kwargs,
         )
         return cls(engine=eng, _registry={})

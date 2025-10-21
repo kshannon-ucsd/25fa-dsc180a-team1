@@ -16,7 +16,7 @@ db.run_sql_file(fp)
 
 df = db.query_df("SELECT * FROM mimiciii.elixhauser_quan LIMIT 1;")
 
-pd.display(df)
+print(df)
 
 #this should be enough to create the elixhauser_quan comorbidity score
 #prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
