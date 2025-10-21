@@ -33,6 +33,7 @@ class DB:
             max_overflow=max_overflow,
             pool_pre_ping=pool_pre_ping,
             future=True,
+            connect_args={"options": "-csearch_path=mimiciii,public"},
             **kwargs,
         )
         return cls(engine=eng, _registry={})
@@ -93,3 +94,36 @@ class DB:
     def dispose(self) -> None:
         """Close all connection pools."""
         self.engine.dispose()
+
+    def run_sql_file(self, fp: str) -> None:
+        """
+        Execute a .sql file as if running '\i file.sql' in psql.
+
+        Args:
+            fp (str): Path to the SQL file.
+        """
+        try:
+            with open(fp, "r") as f:
+                sql_text = f.read()
+                
+            with self.engine.begin() as conn:
+                # Execute entire SQL script in one go (Postgres supports multi-statements)
+                conn.exec_driver_sql(sql_text)
+
+            print(f"Executed SQL file successfully: {fp}")
+
+        except FileNotFoundError:
+            raise RuntimeError(f"SQL file not found: {fp}")
+        except Exception as e:
+            raise RuntimeError(f"Error executing SQL file '{fp}': {e}")
+        
+    from sqlalchemy import text
+
+    def execute(self, sql: str, params: Optional[Mapping[str, Any]] = None) -> None:
+        """Execute a non-SELECT SQL statement (DDL/DML) and commit."""
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text(sql), params or {})
+        except (SQLAlchemyError, OperationalError) as e:
+            raise RuntimeError(f"Database execute failed: {e}")
+
