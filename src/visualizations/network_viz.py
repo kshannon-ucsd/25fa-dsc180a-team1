@@ -195,6 +195,7 @@ def build_network_graph(
     node_sizes = [G.nodes[node]["prevalence"] * node_size_factor for node in G.nodes()]
     edge_widths = [G[u][v]["rr"] * edge_width_factor for u, v in G.edges()]
     edge_alphas = getting_grdient_edge_alpha([G[u][v]["rr"] for u, v in G.edges()])
+    label_pos = {node: (x, y - 0.1) for node, (x, y) in node_pos.items()}
 
     # Draw graph
     fig, ax = plt.subplots(figsize=(14, 14), facecolor="white")
@@ -215,10 +216,11 @@ def build_network_graph(
         linewidths=1.5,
         ax=ax,
     )
+
     nx.draw_networkx_labels(
         G,
-        node_pos,
-        font_size=10,
+        label_pos,
+        font_size=13,
         font_weight="bold",
         font_family="sans-serif",
         ax=ax,
@@ -254,24 +256,6 @@ def main():
     }
 
     build_network_graph(edge_data, prevalence_norm, 25000, 1.25)
-    print(df_tpatients_comorbidity_details.columns)
-    raise Exception("Stop here")
-
-    # Build network
-    print("4. Building network graph...")
-    G = build_network_graph(df, comorbidity_cols, prevalence)
-    print(f"   Network: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-
-    # Create visualization
-    print("5. Creating visualization...")
-    output_path = (
-        Path(__file__).parent.parent.parent / "assets" / "comorbidity_network.png"
-    )
-    draw_network(G, prevalence, str(output_path))
-
-    print("\n" + "=" * 80)
-    print("✓ Network visualization generation complete!")
-    print("=" * 80)
 
 
 # Run main function
