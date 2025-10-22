@@ -116,6 +116,57 @@ def calculate_relative_risk(df, comorbidity_cols, prevalence):
     return relative_risks
 
 
+def getting_grdient_edge_alpha(rr_values):
+    """Getting gradient edge alpha based on normalized RR values that pass threshold.
+
+    Top 5% of edges by RR get normalized alpha (0.1 to 0.8), others get light alpha (0.1).
+
+    Args:
+        rr_values: List of RR values for each edge.
+
+    Returns:
+        list: List of alpha values for each edge.
+    """
+    # Step 1: Calculate threshold for top X%
+    rr_values_sorted = sorted(rr_values, reverse=True)
+    top_percent_index = int(len(rr_values_sorted) * (10 / 100))
+    threshold = (
+        rr_values_sorted[top_percent_index]
+        if top_percent_index > 0
+        else rr_values_sorted[0]
+    )
+
+    # Step 2: Get RR values that pass the threshold
+    above_threshold_rr = [rr for rr in rr_values if rr >= threshold]
+
+    if not above_threshold_rr:
+        return [0.1] * len(rr_values)
+
+    # Step 3: Calculate min and max for normalization
+    min_rr_above = min(above_threshold_rr)
+    max_rr_above = max(above_threshold_rr)
+
+    # Step 4: Calculate alpha for each edge
+    edge_alphas = []
+    for rr in rr_values:
+        if rr >= threshold:
+            # Normalize RR within the threshold range (0.1 to 0.8)
+            if max_rr_above > min_rr_above:
+                normalized_rr = (rr - min_rr_above) / (max_rr_above - min_rr_above)
+            else:
+                normalized_rr = 0.5
+
+            # Higher RR → higher alpha (more opaque)
+            alpha = 0.1 + normalized_rr * 0.7  # Range: 0.1 to 0.8
+        else:
+            # Below threshold: light alpha
+            alpha = 0.1
+
+        edge_alphas.append(alpha)
+
+    return edge_alphas
+
+
 def build_network_graph(
     edge_data,
     prevalence_norm,
@@ -143,6 +194,7 @@ def build_network_graph(
     node_pos = nx.spring_layout(G, k=0.8, iterations=100, seed=42)
     node_sizes = [G.nodes[node]["prevalence"] * node_size_factor for node in G.nodes()]
     edge_widths = [G[u][v]["rr"] * edge_width_factor for u, v in G.edges()]
+    edge_alphas = getting_grdient_edge_alpha([G[u][v]["rr"] for u, v in G.edges()])
 
     # Draw graph
     fig, ax = plt.subplots(figsize=(14, 14), facecolor="white")
@@ -151,7 +203,7 @@ def build_network_graph(
         node_pos,
         width=edge_widths,
         edge_color="black",
-        alpha=0.3,
+        alpha=edge_alphas,
         ax=ax,
     )
     nx.draw_networkx_nodes(
@@ -179,209 +231,6 @@ def build_network_graph(
     print(f"✓ Visualization saved to {dest_path}")
 
 
-# def calculate_edge_color(rr, factor=0.8):
-#     """Map relative risk to grayscale color (darker = higher RR)."""
-#     exp_factor = np.exp((rr - 1) * factor)
-#     gray_val = max(0.01, min(0.99, 1 / exp_factor))
-#     return str(gray_val)
-
-
-# def format_label(node_name):
-#     """Format node names for display (replace underscores with spaces)."""
-#     return node_name.replace("_", " ")
-
-
-# def calculate_relative_risk(df, disease_a, disease_b):
-#     """Calculate relative risk and p-value for two diseases."""
-#     # Contingency table
-#     a_and_b = ((df[disease_a] == 1) & (df[disease_b] == 1)).sum()
-#     a_not_b = ((df[disease_a] == 1) & (df[disease_b] == 0)).sum()
-#     not_a_b = ((df[disease_a] == 0) & (df[disease_b] == 1)).sum()
-#     not_a_not_b = ((df[disease_a] == 0) & (df[disease_b] == 0)).sum()
-
-#     # Conditional probabilities
-#     p_b_given_a = a_and_b / (a_and_b + a_not_b) if (a_and_b + a_not_b) > 0 else 0
-#     p_b_given_not_a = (
-#         not_a_b / (not_a_b + not_a_not_b) if (not_a_b + not_a_not_b) > 0 else 0
-#     )
-
-#     # Relative risk
-#     rr = p_b_given_a / p_b_given_not_a if p_b_given_not_a > 0 else float("inf")
-
-#     # Chi-square test
-#     contingency_table = [[a_and_b, a_not_b], [not_a_b, not_a_not_b]]
-#     _, p_value, _, _ = chi2_contingency(contingency_table)
-
-#     return rr, p_value
-
-
-# def query_comorbidity_data(db):
-#     """Query comorbidity data from database."""
-#     query = "SELECT * FROM filtered_patients_with_morbidity_counts"
-#     return db.query_df(query)
-
-
-# def build_network_graph(df, comorbidity_cols, prevalence):
-#     """Build NetworkX graph with significant associations."""
-#     G = nx.Graph()
-
-#     # Add nodes
-#     for disease in comorbidity_cols:
-#         G.add_node(disease, prevalence=prevalence[disease])
-
-#     # Calculate pairwise associations
-#     edges_data = []
-#     for disease_a, disease_b in combinations(comorbidity_cols, 2):
-#         rr, p_value = calculate_relative_risk(df, disease_a, disease_b)
-
-#         # Only include significant associations
-#         if p_value < 0.05 and rr > 1.0:
-#             edges_data.append(
-#                 {"source": disease_a, "target": disease_b, "rr": rr, "p_value": p_value}
-#             )
-
-#     # Add edges
-#     for edge in edges_data:
-#         G.add_edge(
-#             edge["source"], edge["target"], rr=edge["rr"], p_value=edge["p_value"]
-#         )
-
-#     return G
-
-
-# def draw_network(
-#     G,
-#     prevalence,
-#     output_path,
-#     figsize=(12, 12),
-#     node_size_mult=5000,
-#     edge_width=4.0,
-#     top_n=15,
-# ):
-#     """Draw and save network visualization."""
-#     # Create figure
-#     fig, ax = plt.subplots(figsize=figsize, facecolor="white")
-
-#     # Calculate layout
-#     pos = nx.spring_layout(G, k=0.8, iterations=100, seed=42)
-
-#     # Node sizes
-#     node_sizes = [prevalence[node] * node_size_mult for node in G.nodes()]
-
-#     # Determine top N edges for solid lines
-#     all_rrs = [G[u][v]["rr"] for u, v in G.edges()]
-#     sorted_rrs = sorted(all_rrs, reverse=True)
-#     threshold = sorted_rrs[top_n - 1] if len(sorted_rrs) >= top_n else sorted_rrs[-1]
-
-#     # Separate edges by style
-#     dotted_edges, dotted_colors = [], []
-#     solid_edges, solid_colors = [], []
-
-#     for u, v in G.edges():
-#         rr = G[u][v]["rr"]
-#         color = calculate_edge_color(rr)
-
-#         if rr >= threshold:
-#             solid_edges.append((u, v))
-#             solid_colors.append(color)
-#         else:
-#             dotted_edges.append((u, v))
-#             dotted_colors.append(color)
-
-#     # Draw dotted edges
-#     if dotted_edges:
-#         nx.draw_networkx_edges(
-#             G,
-#             pos,
-#             edgelist=dotted_edges,
-#             width=edge_width,
-#             edge_color=dotted_colors,
-#             alpha=1.0,
-#             style="dotted",
-#             ax=ax,
-#         )
-
-#     # Draw solid edges
-#     if solid_edges:
-#         nx.draw_networkx_edges(
-#             G,
-#             pos,
-#             edgelist=solid_edges,
-#             width=edge_width,
-#             edge_color=solid_colors,
-#             alpha=1.0,
-#             style="solid",
-#             ax=ax,
-#         )
-
-#     # Draw nodes
-#     nx.draw_networkx_nodes(
-#         G,
-#         pos,
-#         node_size=node_sizes,
-#         node_color="white",
-#         edgecolors="black",
-#         linewidths=1.5,
-#         ax=ax,
-#     )
-
-#     # Draw labels
-#     labels = {node: format_label(node) for node in G.nodes()}
-#     nx.draw_networkx_labels(
-#         G,
-#         pos,
-#         labels=labels,
-#         font_size=9,
-#         font_weight="bold",
-#         font_family="sans-serif",
-#         ax=ax,
-#     )
-
-#     # Add legend
-#     legend_elements = [
-#         plt.scatter(
-#             [],
-#             [],
-#             s=0.50 * node_size_mult,
-#             c="white",
-#             edgecolors="black",
-#             linewidths=1.5,
-#             label="50% prevalence",
-#         ),
-#         plt.scatter(
-#             [],
-#             [],
-#             s=0.25 * node_size_mult,
-#             c="white",
-#             edgecolors="black",
-#             linewidths=1.5,
-#             label="25% prevalence",
-#         ),
-#     ]
-#     ax.legend(handles=legend_elements, loc="lower right", frameon=True, fontsize=12)
-
-#     # Styling
-#     x_vals = [pos[n][0] for n in G.nodes()]
-#     y_vals = [pos[n][1] for n in G.nodes()]
-#     ax.set_xlim([min(x_vals) - 0.1, max(x_vals) + 0.1])
-#     ax.set_ylim([min(y_vals) - 0.1, max(y_vals) + 0.1])
-#     ax.axis("off")
-
-#     # Title
-#     ax.set_title(
-#         "Comorbidity Network - Elixhauser Index\n"
-#         "(Node size = Prevalence, Edge darkness = Relative Risk)",
-#         fontsize=16,
-#         fontweight="bold",
-#         pad=20,
-#     )
-
-#     plt.tight_layout()
-#     fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
-#     print(f"✓ Visualization saved to {output_path}")
-#     plt.close()
-
-
 def main():
     # Getting data
     df_tpatients_comorbidity_details = get_detailComorbidityData_PerPatient()
@@ -404,8 +253,8 @@ def main():
         if metrics["significant"]
     }
 
-    build_network_graph(edge_data, prevalence_norm, 10000, 3)
-
+    build_network_graph(edge_data, prevalence_norm, 25000, 1.25)
+    print(df_tpatients_comorbidity_details.columns)
     raise Exception("Stop here")
 
     # Build network
