@@ -10,28 +10,11 @@ from math import exp
 
 import matplotlib.pyplot as plt
 import networkx as nx
-import pandas as pd
 
 from mimiciii_db import DB
 from visualizations.config import *
 
 DB_CONN = DB.from_url(DATABASE_URL)
-
-
-# import sys
-# from itertools import combinations
-# from pathlib import Path
-
-# import matplotlib.pyplot as plt
-# import networkx as nx
-# import numpy as np
-# import pandas as pd
-# from scipy.stats import chi2_contingency
-
-# # Add parent directory to path for imports
-# sys.path.insert(0, str(Path(__file__).parent.parent))
-# from mimiciii_db import DB
-# from mimiciii_db.config import db_url
 
 
 def get_detailComorbidityData_PerPatient():
