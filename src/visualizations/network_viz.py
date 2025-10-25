@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 """
 Creating network visualization of comorbidity relationships based on the Elixhauser Index.
 
 Each comorbidity is a node in the network, and the edges represent the relationships between the comorbidities.
 the edges are weighted by the relative risk of the comorbidities.
 """
+
 from itertools import combinations
 from math import exp
 
