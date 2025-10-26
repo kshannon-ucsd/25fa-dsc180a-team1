@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import numpy as np
 import pandas as pd
 
@@ -23,123 +26,112 @@ def get_detailComorbidityData_PerPatient():
     )
 
 
-def lac_ready_data(df_detailComorbidityData_PerPatient):
-    """Prepare data for LCA clustering."""
-
+def lca_ready_data(df_detailComorbidityData_PerPatient):
+    """Prepare data for LCA clustering.
+    All the categorical variables are converted to int starting with 1
+    """
     df = df_detailComorbidityData_PerPatient.copy()
-
-    def admin_type_to_binary(admission_type):
-        if admission_type.lower() == "elective":
-            return 1
-        else:
-            return 0
-
-    df["admission_type_binary"] = df["admission_type"].apply(admin_type_to_binary)
+    df = df.dropna()
 
     # categorize age into bins
+    # 1 -> 16-24, 2 -> 25-44, 3 -> 45-64, 4 -> 65-84, 5 -> 85+
     age_bins = [16, 25, 45, 65, 85, 100]
-    df["age_bin"] = pd.cut(
-        df["age"], bins=age_bins, labels=["16-24", "25-44", "45-64", "65-84", "85+"]
-    )
+    df["age_bin"] = pd.cut(df["age"], bins=age_bins, labels=[1, 2, 3, 4, 5])
 
-    # Convert categorical to string to avoid numpy array issues
-    df["age_bin"] = df["age_bin"].astype(str)
+    # 1 -> elective, 2 -> non-elective
+    df["admission_type_binary"] = df["admission_type"].apply(
+        lambda x: 1 if x.lower() == "elective" else 2
+    )
 
     df.drop(columns=["age", "admission_type"], inplace=True)
 
-    manifest = df.columns[1:].tolist()
+    for col in df.columns:
+        df[col] = df[col].apply(lambda entry: 2 if entry == 0 else entry).astype(int)
 
-    return df, manifest
+    return df
 
 
-def export_data_for_r(df, manifest, Kmax=8):
-    """Export data and generate R script for LCA analysis in RStudio."""
+def export_data_for_r(df):
+    """Export data to CSV for R LCA analysis.
 
+    Args:
+        df: DataFrame with LCA-ready data
+
+    Returns:
+        str: Path to the exported CSV file
+    """
     # Create temp directory if it doesn't exist
-    import os
-
     temp_dir = "temp"
     os.makedirs(temp_dir, exist_ok=True)
 
     # Save DataFrame to CSV for R to read
-    df_subset = df[manifest].copy()
-    csv_path = os.path.join(temp_dir, "lca_data.csv")
-    df_subset.to_csv(csv_path, index=False)
-    print(f"Data exported to: {csv_path}")
+    csv_path = os.path.join(temp_dir, "lca_ready_data.csv")
+    df.to_csv(csv_path, index=False)
+    return csv_path
 
-    # Build formula string
-    mjoin = " + ".join(manifest)
 
-    # Create R script
-    r_script = f"""
-# Load required libraries
-library(poLCA)
+def lca_analysis():
+    """
+    Perform LCA analysis by exporting data and running R script.
 
-# Read data
-data <- read.csv("{csv_path}")
+    Args:
+        data: DataFrame with LCA-ready data
 
-# Convert all columns to numeric (poLCA requires numeric data)
-for(col in names(data)) {{
-    data[[col]] <- as.numeric(as.factor(data[[col]]))
-}}
+    Returns:
+        dict: Dictionary containing three DataFrames:
+            - 'results_summary': Model comparison (K, BIC, AIC, MIN_SUBGROUP_SIZE)
+            - 'subgroup_assignments': Patient subgroup assignments for all K
+            - 'best_model_stats': Statistics for the best model
 
-# Build formula
-formula <- as.formula("cbind({mjoin}) ~ 1")
+    Raises:
+        FileNotFoundError: If R script or output files are missing
+        subprocess.CalledProcessError: If R script execution fails
+        Exception: Other errors during analysis
+    """
+    try:
+        r_script_path = os.path.join(os.path.dirname(__file__), "lca_model_fitting.R")
+        if not os.path.exists(r_script_path):
+            raise FileNotFoundError(f"R script not found: {r_script_path}")
 
-# Fit LCA models
-fits <- list()
-print("Fitting LCA models with K=1 to {Kmax}...")
+        # Run R script
+        print(f"Running R script... This may take a few minutes...")
+        subprocess.run(["Rscript", r_script_path], check=True, text=True)
 
-for(k in 1:{Kmax}) {{
-    print(paste("  Fitting K=", k, "...", sep=""))
-    tryCatch({{
-        fit <- poLCA(formula, data, nclass=k, nrep=10, maxiter=5000, verbose=FALSE, na.rm=TRUE)
-        fits[[k]] <- fit
-        print(paste("    K=", k, ": BIC=", round(fit$bic, 1), ", AIC=", round(fit$aic, 1), sep=""))
-    }}, error = function(e) {{
-        print(paste("    K=", k, ": Failed -", e$message, sep=""))
-    }})
-}}
+        # Load results
+        temp_dir = "temp"
+        results_summary_path = os.path.join(temp_dir, "lca_results_summary.csv")
+        subgroup_assignments_path = os.path.join(temp_dir, "lca_all_subgroups.csv")
+        best_model_stats_path = os.path.join(temp_dir, "lca_best_model_stats.csv")
 
-# Save results
-saveRDS(fits, "{temp_dir}/lca_fits.rds")
-print("LCA fitting completed!")
+        # Load CSV files into DataFrames
+        results_summary = pd.read_csv(results_summary_path)
+        subgroup_assignments = pd.read_csv(subgroup_assignments_path)
+        best_model_stats = pd.read_csv(best_model_stats_path)
 
-# Print summary of results
-print("\\n=== LCA Model Summary ===")
-for(k in 1:{Kmax}) {{
-    if(!is.null(fits[[k]])) {{
-        print(paste("K=", k, ": BIC=", round(fits[[k]]$bic, 1), ", AIC=", round(fits[[k]]$aic, 1), sep=""))
-    }}
-}}
-"""
+        return {
+            "results_summary": results_summary,
+            "subgroup_assignments": subgroup_assignments,
+            "best_model_stats": best_model_stats,
+        }
 
-    # Write R script to file
-    r_script_path = os.path.join(temp_dir, "lca_script.R")
-    with open(r_script_path, "w") as f:
-        f.write(r_script)
-
-    print(f"R script generated at: {r_script_path}")
-    print(f"Manifest variables: {manifest}")
-    print(f"Data shape: {df_subset.shape}")
-
-    return csv_path, r_script_path
+    except subprocess.CalledProcessError as e:
+        print(f"❌ R script execution failed with return code {e.returncode}")
+        print(f"Error output: {e.stderr}")
+        raise
+    except FileNotFoundError as e:
+        print(f"❌ File not found: {e}")
+        raise
+    except Exception as e:
+        print(f"❌ Error during LCA analysis: {e}")
+        raise
 
 
 if __name__ == "__main__":
 
     df_detailComorbidityData_PerPatient = get_detailComorbidityData_PerPatient()
 
-    df_lac_ready_data, manifest = lac_ready_data(df_detailComorbidityData_PerPatient)
+    df_lca_ready_data = lca_ready_data(df_detailComorbidityData_PerPatient)
+    export_data_for_r(df_lca_ready_data)
 
-    # install_polca()
-
-    csv_path, r_script_path = export_data_for_r(df_lac_ready_data, manifest)
-
-    print(f"\n=== Export Complete ===")
-    print(f"CSV data file: {csv_path}")
-    print(f"R script file: {r_script_path}")
-    print(f"\nNext steps:")
-    print(f"1. Open RStudio")
-    print(f"2. Copy and paste the contents of {r_script_path}")
-    print(f"3. Run the script to perform LCA analysis")
+    results = lca_analysis()
+    print(results)
