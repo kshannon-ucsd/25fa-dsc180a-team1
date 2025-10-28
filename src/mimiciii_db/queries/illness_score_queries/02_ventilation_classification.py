@@ -1,3 +1,4 @@
+#script to create the table to identify the presence of a mechanical ventilation using settings
 import pandas as pd
 
 from mimiciii_db import DB
@@ -7,7 +8,7 @@ db = DB.from_url(db_url())
 
 query = f"""
 -- THIS SCRIPT IS AUTOMATICALLY GENERATED. DO NOT EDIT IT DIRECTLY.
-DROP TABLE IF EXISTS ventilation_classification; CREATE TABLE ventilation_classification AS 
+DROP MATERIALIZED VIEW IF EXISTS ventilation_classification; CREATE MATERIALIZED VIEW ventilation_classification AS 
 -- Identify The presence of a mechanical ventilation using settings
 select
   icustay_id, charttime

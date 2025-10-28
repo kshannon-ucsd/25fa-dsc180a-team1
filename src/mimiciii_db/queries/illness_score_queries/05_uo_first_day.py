@@ -1,3 +1,4 @@
+#script to create the table with the total urine output for each ICU stay in first 24h
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +6,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = """
-DROP TABLE IF EXISTS mimiciii.urine_output_first_day;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.urine_output_first_day;
 
-CREATE TABLE mimiciii.urine_output_first_day AS
+CREATE MATERIALIZED VIEW mimiciii.urine_output_first_day AS
 -- ------------------------------------------------------------------
 -- Purpose: total urine output for each ICU stay in first 24h
 -- ------------------------------------------------------------------

@@ -1,13 +1,19 @@
-import pandas as pd
+# -- This query extracts the duration of mechanical ventilation
+# -- The main goal of the query is to aggregate sequential ventilator settings
+# -- into single mechanical ventilation "events". The start and end time of these
+# -- events can then be used for various purposes: calculating the total duration
+# -- of mechanical ventilation, cross-checking values (e.g. PaO2:FiO2 on vent), etc
+
+import pandas as pd 
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
 
 db = DB.from_url(db_url())
 
 query = """
-DROP TABLE IF EXISTS mimiciii.ventilation_durations;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.ventilation_durations;
 
-CREATE TABLE mimiciii.ventilation_durations AS
+CREATE MATERIALIZED VIEW mimiciii.ventilation_durations AS
 WITH vd0 AS (
     SELECT
         icustay_id,

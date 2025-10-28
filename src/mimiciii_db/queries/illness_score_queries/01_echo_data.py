@@ -1,4 +1,4 @@
-#script to create the table with the patients involved in the study
+#script to create the table with extracts structured data from echocardiographies
 
 import pandas as pd
 
@@ -8,9 +8,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = f"""
-DROP TABLE IF EXISTS mimiciii.echo_data;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.echo_data;
 
-CREATE TABLE mimiciii.echo_data AS
+CREATE MATERIALIZED VIEW mimiciii.echo_data AS
 SELECT
     ne.row_id,
     ne.subject_id,

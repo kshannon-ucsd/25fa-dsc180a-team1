@@ -1,3 +1,5 @@
+#script to create the table with the SAPS-II score for each ICU stay
+
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +7,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = f"""
-DROP TABLE IF EXISTS mimiciii.sapsii;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.sapsii;
 
-CREATE TABLE mimiciii.sapsii AS
+CREATE MATERIALIZED VIEW mimiciii.sapsii AS
 WITH cpap AS (
     SELECT
         ie.icustay_id,

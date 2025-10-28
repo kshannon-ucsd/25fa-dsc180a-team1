@@ -25,7 +25,7 @@ The scripts in this folder create materialized views that extract and calculate 
 
 ## Usage
 
-Each script can be run independently to generate its corresponding materialized view:
+Each script can be run independently to generate its corresponding materialized view
 
 
 ## Data Sources
@@ -33,7 +33,7 @@ Each script can be run independently to generate its corresponding materialized 
 The queries primarily utilize data from:
 - Chart events
 - Laboratory measurements
-- Input/output events
+- Input/output events 
 - Procedure events
 - Patient demographics and admission information
 

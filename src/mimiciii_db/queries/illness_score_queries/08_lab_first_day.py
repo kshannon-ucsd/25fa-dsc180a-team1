@@ -1,3 +1,4 @@
+#script to create the table with the laboratory values for the first day of the ICU stay
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +6,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = f"""
-DROP TABLE IF EXISTS mimiciii.labs_first_day;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.labs_first_day;
 
-CREATE TABLE mimiciii.labs_first_day AS
+CREATE MATERIALIZED VIEW mimiciii.labs_first_day AS
 -- This query pivots lab values taken in the first 24 hours of a patient's ICU stay.
 -- We also allow labs drawn up to 6h *before* ICU intime (common clinically).
 

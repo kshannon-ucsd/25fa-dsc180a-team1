@@ -1,3 +1,4 @@
+#script to create the table to identify the presence of a mechanical ventilation on the first day of the ICU stay
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +6,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = """
-DROP TABLE IF EXISTS mimiciii.ventilation_first_day;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.ventilation_first_day;
 
-CREATE TABLE mimiciii.ventilation_first_day AS
+CREATE MATERIALIZED VIEW mimiciii.ventilation_first_day AS
 -- Determines if a patient is ventilated on the first day of their ICU stay.
 -- Requires the ventilation_durations table already built in mimiciii.
 

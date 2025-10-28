@@ -1,3 +1,6 @@
+# -- This query pivots the vital signs for the first 24 hours of a patient's stay
+# -- Vital signs include heart rate, blood pressure, respiration rate, and temperature
+
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +8,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = """
-DROP TABLE IF EXISTS mimiciii.vitals_first_day;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.vitals_first_day;
 
-CREATE TABLE mimiciii.vitals_first_day AS
+CREATE MATERIALIZED VIEW mimiciii.vitals_first_day AS
 -- first-24h vitals per ICU stay
 SELECT
     pvt.subject_id,

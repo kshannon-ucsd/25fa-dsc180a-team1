@@ -1,3 +1,4 @@
+#script to create the table with the blood gas values for the first day of the ICU stay for arterial samples
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
@@ -5,9 +6,9 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = f"""
-DROP TABLE IF EXISTS mimiciii.blood_gas_first_day_arterial;
+DROP MATERIALIZED VIEW IF EXISTS mimiciii.blood_gas_first_day_arterial;
 
-CREATE TABLE mimiciii.blood_gas_first_day_arterial AS
+CREATE MATERIALIZED VIEW mimiciii.blood_gas_first_day_arterial AS
 WITH stg_spo2 AS (
     SELECT
         ce.subject_id,
