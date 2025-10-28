@@ -215,6 +215,10 @@ data/*
 logs/*
 !logs/.gitkeep
 
+# Temp folder - ignore all contents but keep the folder structure
+temp/*
+!temp/.gitkeep
+
 # macOS
 .DS_Store
 .DS_Store?
