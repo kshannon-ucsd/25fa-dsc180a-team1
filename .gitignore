@@ -136,6 +136,7 @@ celerybeat.pid
 
 # Environments
 .env
+!.env.example
 .envrc
 .venv
 env/
@@ -213,6 +214,10 @@ data/*
 # Logs folder - ignore all contents but keep the folder structure
 logs/*
 !logs/.gitkeep
+
+# Temp folder - ignore all contents but keep the folder structure
+temp/*
+!temp/.gitkeep
 
 # macOS
 .DS_Store
