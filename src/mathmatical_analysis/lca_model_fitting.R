@@ -5,7 +5,7 @@ if (!require(poLCA, quietly = TRUE)) {
 }
 
 # Read data
-data <- read.csv("temp/lca_ready_data.csv")
+data <- read.csv("data/lca_ready_data.csv")
 # Prepare LCA data
 hadm_ids <- data$hadm_id
 lca_data <- data[, !names(data) %in% "hadm_id"]
@@ -67,7 +67,7 @@ results_summary <- data.frame(
   AIC = sapply(successful_fits, function(k) fits[[k]]$aic),
   MIN_SUBGROUP_SIZE = sapply(successful_fits, function(k) min(table(fits[[k]]$predclass)))
 )
-write.csv(results_summary, "temp/lca_results_summary.csv", row.names = FALSE, quote = FALSE)
+write.csv(results_summary, "data/lca_results_summary.csv", row.names = FALSE, quote = FALSE)
 
 # Save subgroup assignments
 all_subgroup_assignments <- data.frame(hadm_id = hadm_ids)
@@ -80,8 +80,8 @@ for(k in successful_fits) {
   }
 }
 
-write.csv(all_subgroup_assignments, "temp/lca_all_subgroups.csv", row.names = FALSE, quote = FALSE)
-print("✅ All subgroup assignments saved to: temp/lca_all_subgroups.csv")
+write.csv(all_subgroup_assignments, "data/lca_all_subgroups.csv", row.names = FALSE, quote = FALSE)
+print("✅ All subgroup assignments saved to: data/lca_all_subgroups.csv")
 
 # Find best model
 if(length(successful_fits) > 0) {
@@ -133,5 +133,5 @@ if(length(successful_fits) > 0) {
     stop("No valid models found - all models have subgroups smaller than 5% threshold")
   }
   
-  write.csv(best_model_stats, "temp/lca_best_model_stats.csv", row.names = FALSE, quote = FALSE)
+  write.csv(best_model_stats, "data/lca_best_model_stats.csv", row.names = FALSE, quote = FALSE)
 }
