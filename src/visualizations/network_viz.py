@@ -14,6 +14,8 @@ import networkx as nx
 from mimiciii_db import DB
 from visualizations.config import *
 
+GENERATED_NETWORK_PATH = "assets/fig_1/fig_1c.png"
+
 DB_CONN = DB.from_url(DATABASE_URL)
 
 
@@ -58,6 +60,22 @@ def calculate_prevalence(df, comorbidity_cols):
 
 
 def calculate_relative_risk(df, comorbidity_cols, prevalence):
+    """
+    Calculate relative risk for each comorbidity pair.
+
+    Args:
+        df (pandas.DataFrame): DataFrame with detail comorbidity data per patient.
+        comorbidity_cols (list): List of comorbidity columns.
+        prevalence (dict): Dictionary with normalized prevalence for each comorbidity.
+
+    Returns:
+        dict: Dictionary with relative risk for each comorbidity pair.
+        The keys are tuples of (comorbidity_a, comorbidity_b), and the values are dictionaries with the following keys:
+        - rr: Relative risk
+        - rr_ci_lower: Lower confidence interval of relative risk
+        - rr_ci_upper: Upper confidence interval of relative risk
+        - significant: Whether the relative risk is significant at the 0.05 level
+    """
     N = len(df)
     relative_risks = {}
 
@@ -157,6 +175,19 @@ def build_network_graph(
     edge_width_factor=1,
     dest_path="assets/comorbidity_network.png",
 ):
+    """
+    Build network graph.
+
+    Args:
+        edge_data (dict): Dictionary with relative risk for each comorbidity pair.
+        prevalence_norm (dict): Dictionary with normalized prevalence for each comorbidity.
+        node_size_factor (float): Factor to scale node size.
+        edge_width_factor (float): Factor to scale edge width.
+        dest_path (str): Path to save the visualization.
+
+    Returns:
+        None
+    """
     G = nx.Graph()
 
     # Creating nodes
@@ -238,7 +269,7 @@ def main():
         if metrics["significant"]
     }
 
-    build_network_graph(edge_data, prevalence_norm, 25000, 1.25)
+    build_network_graph(edge_data, prevalence_norm, 25000, 1.25, GENERATED_NETWORK_PATH)
 
 
 # Run main function
