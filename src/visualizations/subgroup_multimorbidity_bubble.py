@@ -105,7 +105,7 @@ def load_subgroup_and_morbidity_data(csv_path: str, subgroup_col: str = "subgrou
 def main():
     """Main function for standalone execution."""
     # Path to LCA subgroups CSV
-    csv_path = "temp/lca_all_subgroups.csv"
+    csv_path = "data/lca_all_subgroups.csv"
     subgroup_col = "subgroup_K6"
     morbidity_count_col = "morbidity_count"
 
