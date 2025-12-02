@@ -1,5 +1,3 @@
-#script to create the table with the patients involved in the study
-
 import pandas as pd
 
 from mimiciii_db import DB
@@ -43,6 +41,3 @@ SELECT * from mimiciii.filtered_patients LIMIT 1;
 df = db.query_df(selection_query)
 
 print(df)
-
-#prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
-#so, in addition to the command above, I would recommend running the command "ALTER MATERIALIZED VIEW {old_mv} RENAME TO {varun_old_mv}"
