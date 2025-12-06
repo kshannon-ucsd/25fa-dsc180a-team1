@@ -72,3 +72,5 @@ print(df)
 export_query = f"""
 COPY mimiciii.filtered_patients_agegrouped_with_morbidities_and_elective_flag TO '{os.getenv("DATA_FOLDER_PATH")}/lca_data.csv' DELIMITER ',' CSV HEADER;
 """
+
+db.execute(export_query)

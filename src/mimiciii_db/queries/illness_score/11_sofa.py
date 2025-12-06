@@ -2,8 +2,10 @@
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
-
 db = DB.from_url(db_url())
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 query = f"""
 DROP MATERIALIZED VIEW IF EXISTS mimiciii.sofa;
@@ -289,3 +291,9 @@ SELECT * from mimiciii.sofa LIMIT 1;
 df = db.query_df(selection_query)
 
 print(df)
+
+export_query = f"""
+COPY mimiciii.sofa TO '{os.getenv("DATA_FOLDER_PATH")}/sofa.csv' DELIMITER ',' CSV HEADER;
+"""
+
+db.execute(export_query)

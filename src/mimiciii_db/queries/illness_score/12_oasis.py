@@ -2,6 +2,9 @@
 import pandas as pd
 from mimiciii_db import DB
 from mimiciii_db.config import db_url
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 db = DB.from_url(db_url())
 
@@ -299,3 +302,8 @@ SELECT * from mimiciii.oasis LIMIT 1;
 df = db.query_df(selection_query)
 
 print(df)
+export_query = f"""
+COPY mimiciii.oasis TO '{os.getenv("DATA_FOLDER_PATH")}/oasis.csv' DELIMITER ',' CSV HEADER;
+"""
+
+db.execute(export_query)
