@@ -1,143 +1,299 @@
-#!/usr/bin/env python3
 """
-Creating bubble distribution visualization of multimorbidity counts across LCA subgroups.
+Creating network visualization of comorbidity relationships for each LCA subgroup.
 
-This script generates bubble plots showing how patient counts are distributed across
-different multimorbidity count bins within each LCA subgroup.
+Each comorbidity is a node in the network, and the edges represent the relationships between the comorbidities.
+The edges are weighted by the co-occurrence prevalence (number of disease pairs normalized to subgroup size).
+Prevalence and co-occurrence are calculated within each subgroup only.
 """
 
+import os
 import sys
+from itertools import combinations
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
+import networkx as nx
 import pandas as pd
 
 # Add src directory to path
-repo_root = Path(__file__).resolve().parents[6]
+repo_root = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(repo_root / "src"))
 
 from mimiciii_db import DB
-from mimiciii_db.config import db_url
+from visualizations.config import *
 
-# Output path for the generated bubble plot
-OUTPUT_PATH = repo_root / "assets" / "fig_5" / "subgroup_multimorbidity_bubble.png"
-CSV_PATH = repo_root / "data" / "lca_all_subgroups.csv"
+DB_CONN = DB.from_url(DATABASE_URL)
+CSV_PATH = repo_root / "data" / "lca_all_subgroups_relabeled.csv"
+OUTPUT_DIR = repo_root / "assets" / "fig_5"
+NODE_COLOR = {
+    1: "white",
+    3: "#90EE90",  # light green
+    4: "#0000FF",  # blue
+    6: "#FF00FF",  # magenta
+}
 
 
-def plot_subgroup_multimorbidity_bubble(
-    df: pd.DataFrame,
-    subgroup_col: str,
-    morbidity_count_col: str,
-    dest_path: str = "assets/subgroup_multimorbidity_bubble.png",
+def load_subgroup_comorbidity_data(
+    subgroup_csv_path: str,
 ):
-    """Generate bubble plot showing distribution of multimorbidity counts across subgroups.
+    """Load subgroup assignments and merge with comorbidity data.
 
     Args:
-        df: DataFrame containing subgroup assignments and morbidity counts
-        subgroup_col: Column name containing subgroup identifiers
-        morbidity_count_col: Column name containing morbidity counts
-        dest_path: Output file path for the visualization
-    """
-    # Bin morbidity counts into 0-7 and >8
-    df = df.copy()
-    df["morbidity_binned"] = df[morbidity_count_col].apply(lambda x: x if x <= 7 else 8)
-
-    # Create cross-tabulation normalized by row (percentage within each subgroup)
-    ct_binned = (
-        pd.crosstab(df[subgroup_col], df["morbidity_binned"], normalize="index") * 100
-    )
-
-    # Create bubble plot
-    plt.figure(figsize=(12, 8))
-
-    # Create color palette for subgroups
-    colors = plt.cm.Set3(np.linspace(0, 1, len(ct_binned.index)))
-
-    # Plot bubbles
-    for idx, i in enumerate(ct_binned.index):
-        for j in ct_binned.columns:
-            plt.scatter(i, j, s=ct_binned.loc[i, j] * 50, alpha=0.5, color=colors[idx])
-
-    plt.ylabel("Number of Coexisting Conditions")
-    plt.xlabel("Subgroup")
-    plt.title("Distribution of Multimorbidity Counts Across Subgroups")
-
-    # Add legend for bubble sizes
-    sizes = [500, 2500]
-    labels = ["10%", "50%"]
-    legend_elements = [
-        plt.scatter([], [], s=s, c="gray", alpha=0.5, label=l)
-        for s, l in zip(sizes, labels)
-    ]
-    plt.legend(
-        handles=legend_elements,
-        title="Percentage of Patients in Subgroup",
-        labelspacing=2,
-        title_fontsize=10,
-        loc="lower left",
-    )
-
-    plt.grid(True, alpha=0.3)
-    plt.yticks(range(9), [str(i) if i < 8 else ">8" for i in range(9)])
-
-    # Save the figure
-    plt.tight_layout()
-    plt.savefig(dest_path, dpi=300, bbox_inches="tight")
-    plt.close()
-    print(f"✓ Visualization saved to {dest_path}")
-
-
-def load_subgroup_and_morbidity_data(
-    db_conn, csv_path: str, subgroup_col: str = "subgroup_K6"
-):
-    """Load subgroup assignments from CSV and morbidity counts from database.
-
-    Args:
-        db_conn: Database connection object
-        csv_path: Path to CSV file containing subgroup assignments
-        subgroup_col: Column name containing subgroup assignments to extract
+        subgroup_csv_path: Path to the relabeled subgroup assignments CSV file.
 
     Returns:
-        DataFrame with merged subgroup and morbidity count data
+        pandas.DataFrame: DataFrame with hadm_id, subgroup_K6, and all comorbidity columns.
     """
     # Load subgroup assignments
-    subgroup_df = pd.read_csv(csv_path)[["hadm_id", subgroup_col]]
+    subgroup_df = pd.read_csv(subgroup_csv_path)[["hadm_id", "subgroup_K6"]]
 
-    # Query morbidity counts from database
-    morbidity_df = db_conn.query_df(
-        "SELECT * FROM filtered_patients_with_morbidity_counts"
-    )
+    # Load comorbidity data from database
+    comorbidity_df = DB_CONN.query_df(f"SELECT * FROM {ADMISSION_COMORBIDITY_TABLE}")
 
-    # Merge the data
-    merged_df = subgroup_df[["hadm_id", subgroup_col]].merge(
-        morbidity_df[["hadm_id", "morbidity_count"]], on="hadm_id", how="inner"
-    )
+    # Merge subgroup assignments with comorbidity data
+    merged_df = subgroup_df.merge(comorbidity_df, on="hadm_id", how="inner")
 
     return merged_df
 
 
-def main():
-    """Main function for standalone execution."""
-    # Connect to database
-    db_conn = DB.from_url(db_url())
+def calculate_prevalence_subgroup(df_subgroup, comorbidity_cols):
+    """Calculate prevalence count and normalized prevalence for each comorbidity within a subgroup.
 
-    # Configuration
-    subgroup_col = "subgroup_K6"
-    morbidity_count_col = "morbidity_count"
+    Args:
+        df_subgroup (pandas.DataFrame): DataFrame with detail comorbidity data per patient in the subgroup.
+        comorbidity_cols (list): List of comorbidity columns.
 
-    # Load data
-    df = load_subgroup_and_morbidity_data(db_conn, str(CSV_PATH), subgroup_col)
+    Returns:
+        tuple: Two dictionaries containing:
+            - prevalence_count: Dictionary with raw prevalence count for each comorbidity
+            - prevalence_norm: Dictionary with normalized prevalence for each comorbidity (within subgroup)
+    """
+    subgroup_size = len(df_subgroup)
+    prevalence_norm = {}
 
-    # Generate bubble plot
-    plot_subgroup_multimorbidity_bubble(
-        df,
-        subgroup_col=subgroup_col,
-        morbidity_count_col=morbidity_count_col,
-        dest_path=str(OUTPUT_PATH),
+    for disease in comorbidity_cols:
+        count = df_subgroup[disease].sum()
+        prevalence_norm[disease] = count / subgroup_size
+
+    return prevalence_norm
+
+
+def calculate_cooccurrence_prevalence_subgroup(df_subgroup, comorbidity_cols):
+    """
+    Calculate co-occurrence prevalence for each comorbidity pair within a subgroup.
+
+    Co-occurrence prevalence is the number of patients with both diseases normalized
+    to the total number of patients in the subgroup.
+
+    Args:
+        df_subgroup (pandas.DataFrame): DataFrame with detail comorbidity data per patient in the subgroup.
+        comorbidity_cols (list): List of comorbidity columns.
+
+    Returns:
+        dict: Dictionary with co-occurrence prevalence for each comorbidity pair.
+        The keys are tuples of (comorbidity_a, comorbidity_b), and the values are dictionaries with:
+        - cooccurrence_prevalence: Normalized co-occurrence (C_ab / N_subgroup)
+    """
+    N = len(df_subgroup)  # Subgroup size
+    cooccurrence_data = {}
+
+    for comorbidity_a, comorbidity_b in combinations(comorbidity_cols, 2):
+
+        C_ab = (
+            (df_subgroup[comorbidity_a] == 1) & (df_subgroup[comorbidity_b] == 1)
+        ).sum()
+
+        # Normalize to subgroup size
+        cooccurrence_prevalence = C_ab / N if N > 0 else 0.0
+
+        cooccurrence_data[(comorbidity_a, comorbidity_b)] = {
+            "cooccurrence_prevalence": cooccurrence_prevalence,
+        }
+
+    return cooccurrence_data
+
+
+def getting_grdient_edge_alpha(cooccurrence_values):
+    """Getting gradient edge alpha based on normalized co-occurrence values that pass threshold.
+
+    Top 10% of edges by co-occurrence get normalized alpha (0.1 to 0.8), others get light alpha (0.1).
+
+    Args:
+        cooccurrence_values: List of co-occurrence prevalence values for each edge.
+
+    Returns:
+        list: List of alpha values for each edge.
+    """
+    # Step 1: Calculate threshold for top X%
+    cooccurrence_sorted = sorted(cooccurrence_values, reverse=True)
+    top_percent_index = int(len(cooccurrence_sorted) * (10 / 100))
+    threshold = (
+        cooccurrence_sorted[top_percent_index]
+        if top_percent_index > 0
+        else cooccurrence_sorted[0]
     )
 
+    # Step 2: Get co-occurrence values that pass the threshold
+    above_threshold = [val for val in cooccurrence_values if val >= threshold]
 
+    if not above_threshold:
+        return [0.1] * len(cooccurrence_values)
+
+    # Step 3: Calculate min and max for normalization
+    min_val_above = min(above_threshold)
+    max_val_above = max(above_threshold)
+
+    # Step 4: Calculate alpha for each edge
+    edge_alphas = []
+    for val in cooccurrence_values:
+        if val >= threshold:
+            # Normalize within the threshold range (0.1 to 0.8)
+            if max_val_above > min_val_above:
+                normalized_val = (val - min_val_above) / (max_val_above - min_val_above)
+            else:
+                normalized_val = 0.5
+
+            # Higher co-occurrence → higher alpha (more opaque)
+            alpha = 0.1 + normalized_val * 0.7  # Range: 0.1 to 0.8
+        else:
+            # Below threshold: light alpha
+            alpha = 0.1
+
+        edge_alphas.append(alpha)
+
+    return edge_alphas
+
+
+def build_network_graph(
+    edge_data,
+    prevalence_norm,
+    node_size_factor=1,
+    edge_width_factor=1,
+    node_color="white",
+    dest_path="assets/comorbidity_network.png",
+):
+    """
+    Build network graph.
+
+    Args:
+        edge_data (dict): Dictionary with co-occurrence prevalence for each comorbidity pair.
+        prevalence_norm (dict): Dictionary with normalized prevalence for each comorbidity.
+        node_size_factor (float): Factor to scale node size.
+        edge_width_factor (float): Factor to scale edge width.
+        node_color (str or list): Color for nodes. Can be a single color string (e.g., "white", "lightblue")
+            or a list of colors for each node. Defaults to "white".
+        dest_path (str): Path to save the visualization.
+
+    Returns:
+        None
+    """
+    G = nx.Graph()
+
+    # Creating nodes
+    created_nodes = set()
+    for comorbidity_a, comorbidity_b in edge_data.keys():
+        if comorbidity_a not in created_nodes:
+            G.add_node(comorbidity_a, prevalence=prevalence_norm[comorbidity_a])
+            created_nodes.add(comorbidity_a)
+        if comorbidity_b not in created_nodes:
+            G.add_node(comorbidity_b, prevalence=prevalence_norm[comorbidity_b])
+            created_nodes.add(comorbidity_b)
+
+    # Creating edges
+    for (comorbidity_a, comorbidity_b), metrics in edge_data.items():
+        G.add_edge(
+            comorbidity_a,
+            comorbidity_b,
+            cooccurrence=metrics["cooccurrence_prevalence"],
+        )
+
+    # define graph info
+    node_pos = nx.spring_layout(G, k=0.8, iterations=100, seed=42)
+    node_sizes = [G.nodes[node]["prevalence"] * node_size_factor for node in G.nodes()]
+    edge_widths = [G[u][v]["cooccurrence"] * edge_width_factor for u, v in G.edges()]
+    edge_alphas = getting_grdient_edge_alpha(
+        [G[u][v]["cooccurrence"] for u, v in G.edges()]
+    )
+    label_pos = {node: (x, y - 0.1) for node, (x, y) in node_pos.items()}
+
+    # Draw graph
+    fig, ax = plt.subplots(figsize=(14, 14), facecolor="white")
+    nx.draw_networkx_edges(
+        G,
+        node_pos,
+        width=edge_widths,
+        edge_color="black",
+        alpha=edge_alphas,
+        ax=ax,
+    )
+    nx.draw_networkx_nodes(
+        G,
+        node_pos,
+        node_size=node_sizes,
+        node_color=node_color,
+        edgecolors="black",
+        linewidths=1.5,
+        ax=ax,
+    )
+
+    nx.draw_networkx_labels(
+        G,
+        label_pos,
+        font_size=13,
+        font_weight="bold",
+        font_family="sans-serif",
+        ax=ax,
+    )
+
+    ax.axis("off")
+    plt.tight_layout()
+    fig.savefig(dest_path, dpi=300, bbox_inches="tight", facecolor="white")
+    plt.close()
+    print(f"✓ Visualization saved to {dest_path}")
+
+
+def main():
+    """Main function to generate network visualizations for each subgroup."""
+    # Load subgroup and comorbidity data
+    df_all = load_subgroup_comorbidity_data(str(CSV_PATH))
+
+    # Get comorbidity columns (exclude hadm_id and subgroup_K6)
+    comorbidity_cols = [
+        col for col in df_all.columns if col not in ["hadm_id", "subgroup_K6"]
+    ]
+
+    # Create output directory
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # Loop through subgroups 1-6
+    for subgroup in [1, 3, 4, 6]:
+        # Filter data to current subgroup
+        df_subgroup = df_all[df_all["subgroup_K6"] == subgroup].copy()
+
+        # Calculate prevalence within subgroup
+        prevalence_norm = calculate_prevalence_subgroup(df_subgroup, comorbidity_cols)
+
+        # Calculate co-occurrence prevalence within subgroup
+        cooccurrence_data = calculate_cooccurrence_prevalence_subgroup(
+            df_subgroup, comorbidity_cols
+        )
+
+        # Filter to edges with non-zero co-occurrence
+        edge_data = {
+            (comorbidity_a, comorbidity_b): metrics
+            for (comorbidity_a, comorbidity_b), metrics in cooccurrence_data.items()
+            if metrics["cooccurrence_prevalence"] > 0
+        }
+
+        # Build and save network graph
+        output_path = OUTPUT_DIR / f"subgroup_network_group_{subgroup}.png"
+        build_network_graph(
+            edge_data, prevalence_norm, 5000, 7, NODE_COLOR[subgroup], str(output_path)
+        )
+
+    print(f"\n✓ All subgroup network visualizations completed!")
+
+
+# Run main function
 if __name__ == "__main__":
     main()
-
