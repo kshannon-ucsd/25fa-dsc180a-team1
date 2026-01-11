@@ -1,5 +1,3 @@
-#script to create the table with the patients involved in the study
-
 import pandas as pd
 
 from mimiciii_db import DB
@@ -8,7 +6,7 @@ from mimiciii_db.config import db_url
 db = DB.from_url(db_url())
 
 query = f"""
-CREATE MATERIALIZED VIEW mimiciii.multimorbidity_by_age_bracket_1a AS
+CREATE MATERIALIZED VIEW mimiciii.multimorbidity_by_age_bracket AS
  WITH base_table AS (
          SELECT (round(v.age))::integer AS age_rounded,
                 CASE
@@ -58,11 +56,8 @@ CREATE MATERIALIZED VIEW mimiciii.multimorbidity_by_age_bracket_1a AS
 db.execute(query)
 
 selection_query = f"""
-SELECT * from multimorbidity_by_age_bracket_1a LIMIT 1;
+SELECT * from multimorbidity_by_age_bracket LIMIT 1;
 """
 df = db.query_df(selection_query)
 
 print(df)
-
-#prefix the file however you wish, so that the original db remains imutable ; for all the files i create, i prefix the table/view/mv with "varun_" ; 
-#so, in addition to the command above, I would recommend running the command "ALTER MATERIALIZED VIEW {old_mv} RENAME TO {varun_old_mv}"

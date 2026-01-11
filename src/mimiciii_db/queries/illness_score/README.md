@@ -36,4 +36,3 @@ The queries primarily utilize data from:
 - Input/output events 
 - Procedure events
 - Patient demographics and admission information
-
